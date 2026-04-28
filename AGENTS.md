@@ -66,12 +66,16 @@ Do not use these in v1:
 
 ## Cached Fallback Trigger
 
-Paula's `outbound_generator.py` falls back to cached templates and sets `generation_method = "cached_fallback"` when either:
+Low-confidence hospitals (both `discharge_info_star` and `overall_star` null) are skipped entirely by Tool 5. No email object is created.
 
-1. OpenRouter API call fails.
-2. Any required grounding field is null: `discharge_info_star`, `state_postpartum_visit_rate`, or `commitment_tag`.
+For all other hospitals, `outbound_generator.py` calls OpenRouter and falls back to cached templates only when:
 
-Otherwise `generation_method = "openrouter_api"`.
+1. OpenRouter API call fails, OR
+2. `commitment_tag` is null and no variant can be grounded.
+
+A hospital with only one HCAHPS star null still gets a real OpenRouter email. The lead angle cascade uses the available star; if no severe star rule matches, it falls through to `state_strength_vs_hospital_lag`.
+
+`generation_method = "openrouter_api"` on success, or `"cached_fallback"` on either failure mode.
 
 ## File Ownership
 

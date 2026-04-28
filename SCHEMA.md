@@ -216,6 +216,11 @@ One email object per hospital, separate from the hospital dict. Each has **three
                                # subject line; pre-selects variant on dashboard.
   "urgency_tier":       str,   # Copied from hospital dict.
   "generation_method":  str,   # "openrouter_api" or "cached_fallback"
+                               # cached_fallback ONLY when:
+                               #   1. OpenRouter API call fails, OR
+                               #   2. commitment_tag is None
+                               # Hospitals with data_confidence="low" are
+                               # skipped entirely; no email object is created.
 }
 ```
 

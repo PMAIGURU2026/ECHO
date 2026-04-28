@@ -309,13 +309,17 @@ Create `tests/test_outbound_generator.py`.
 
 Test requirements:
 
-- Low urgency and low-confidence hospitals do not get emails.
-- High and medium urgency hospitals get emails.
+- Low urgency hospitals do not get emails.
+- Hospitals with `data_confidence="low"` do not get emails and are skipped entirely; no email object is created.
+- With a successful mocked OpenRouter call, high urgency/high confidence hospitals get emails with `generation_method="openrouter_api"`.
+- With a successful mocked OpenRouter call, medium urgency/high confidence hospitals get emails with `generation_method="openrouter_api"`.
 - Email object has all Tool 5 schema fields.
 - Each email has `body_moral`, `body_clinical`, and `body_financial`.
 - `generation_method` is exactly `openrouter_api` or `cached_fallback`.
-- Fallback triggers when required grounding fields are null.
-- Fallback triggers when the OpenRouter call fails.
+- `generation_method="cached_fallback"` triggers only when:
+- The OpenRouter API call fails, OR
+- `commitment_tag` is `None`.
+- A hospital with one null HCAHPS star but the other present is still high-confidence and eligible for OpenRouter email generation. The lead angle cascade uses the available star; if no severe star rule matches, it falls through to `state_strength_vs_hospital_lag`.
 - Financial variant uses state-level Medicaid context, not `medicaid_pct`.
 - No body contains hardcoded vendor names.
 - Bodies include `[COMPANY_NAME]` and `[SOCIAL_PROOF]` placeholders.
@@ -343,7 +347,8 @@ Acceptance criteria:
 - Requires input hospitals to have `urgency_tier`.
 - Uses OpenRouter in v1.
 - Sets `generation_method` truthfully.
-- Falls back to cached templates on API failure or missing required grounding fields.
+- Skips low-confidence hospitals entirely.
+- Falls back to cached templates only on API failure or missing `commitment_tag`.
 - Generates three grounded variants per included hospital.
 - Does not send email.
 
