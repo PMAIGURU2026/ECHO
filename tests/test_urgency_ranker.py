@@ -67,6 +67,18 @@ def test_adds_schema_v02_urgency_fields():
     assert "racial_disparity_flag" in hospital
 
 
+def test_adds_urgency_context_fields_when_missing_from_upstream():
+    hospital = _scored(HIGH_GAP)
+    hospital.pop("medicaid_extended")
+    hospital.pop("racial_disparity_flag")
+
+    ranked = add_urgency(hospital)
+
+    assert ranked["medicaid_extended"] is True
+    assert ranked["racial_disparity_flag"] is True
+    assert ranked["gap_breakdown"]["urgency_context"] == 25
+
+
 def test_missing_gap_score_raises_key_error():
     with pytest.raises(KeyError):
         add_urgency({"facility_id": "330000", "gap_breakdown": {}})
