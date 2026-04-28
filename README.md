@@ -64,7 +64,7 @@ Removed v0.1 fields such as `compared_to_national`, `postpartum_visit_pct`, `sev
 | Source file | v1 use |
 |---|---|
 | `Birthing_Friendly_Hospitals_Geocoded.csv` | Birthing-Friendly universe, address, ZIP, lat/lon |
-| `HCAHPS-Hospital.csv` | CCN, county, discharge information star, discharge help percent, overall star, survey dates |
+| `HCAHPS-Hospital-NY.csv` | CCN, county, discharge information star, discharge help percent, overall star, survey dates |
 | `core-set-data-dashboard...postpartum-care...csv` | State postpartum visit rate and reporting year |
 | `raw_data.csv` | KFF Medicaid extension context |
 | `hestat113.pdf` | Racial disparity context |
