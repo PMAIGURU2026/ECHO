@@ -9,6 +9,24 @@ from typing import Any
 
 VALID_TIERS = {"high", "medium", "low"}
 VALID_FLAGS = {"🔴 Act this week", "🟡 Monitor", "🟢 Not ready"}
+STATE_URGENCY_CONTEXT = {
+    # Sources documented in SCHEMA.md: KFF postpartum Medicaid tracker and
+    # NCHS Health E-Stat 113. v1 is NY-only after Tool 1.
+    "NY": {
+        "medicaid_extended": True,
+        "racial_disparity_flag": True,
+    }
+}
+
+
+def _add_urgency_context_fields(hospital: dict[str, Any]) -> None:
+    state = str(hospital.get("state") or "").upper()
+    defaults = STATE_URGENCY_CONTEXT.get(
+        state,
+        {"medicaid_extended": False, "racial_disparity_flag": False},
+    )
+    hospital.setdefault("medicaid_extended", defaults["medicaid_extended"])
+    hospital.setdefault("racial_disparity_flag", defaults["racial_disparity_flag"])
 
 
 def _urgency_context_points(hospital: dict[str, Any]) -> int:
@@ -34,6 +52,7 @@ def add_urgency(hospital: dict[str, Any]) -> dict[str, Any]:
     if "gap_breakdown" not in hospital:
         raise KeyError("gap_breakdown is required. Run calculate_gap_score() first.")
 
+    _add_urgency_context_fields(hospital)
     urgency_points = _urgency_context_points(hospital)
     final_score = min(float(hospital["gap_score"]) + urgency_points, 100.0)
     tier, flag = _tier_and_flag(final_score)

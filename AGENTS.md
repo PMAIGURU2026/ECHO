@@ -86,6 +86,7 @@ A hospital with only one HCAHPS star null still gets a real OpenRouter email. Th
 | `src/outcome_scorer.py` | Jonel |
 | `src/gap_calculator.py` | Luba |
 | `src/urgency_ranker.py` | Luba |
+| `src/dashboard_generator.py` | Luba |
 | `src/outbound_generator.py` | Paula |
 | `src/human_checkpoint.py` | Paula |
 
@@ -122,11 +123,12 @@ Never commit an implementation without a passing test. Never skip the failing-te
 .venv/bin/python -m pytest tests/test_gap_calculator.py -v
 .venv/bin/python -m pytest tests/ -v
 .venv/bin/python src/agent.py NY
+.venv/bin/python -m pytest tests/test_dashboard_generator.py -v
 ```
 
 ## Done Criteria
 
 ```text
 .venv/bin/python -m pytest tests/ -v       -> all green, 0 failures
-.venv/bin/python src/agent.py NY           -> real NY hospitals, 3 OpenRouter/cached email variants per high/medium high-confidence account, human checkpoint displayed
+.venv/bin/python src/agent.py NY           -> real NY hospitals, 3 OpenRouter/cached email variants per high/medium high-confidence account, human checkpoint displayed, static dashboard generated
 ```
