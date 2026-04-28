@@ -1,19 +1,15 @@
 # ECHO - Early Care Handoff Observer
 
-ECHO is a GTM intelligence agent for maternal health software companies. It
-finds Birthing-Friendly hospitals whose HCAHPS patient experience lags behind
-their state's postpartum care strength, then drafts grounded outreach for a
-human to review and send.
+ECHO is a GTM intelligence agent for maternal health software companies. It finds CMS Birthing-Friendly hospitals whose HCAHPS patient experience lags behind their state's postpartum visit strength, then drafts grounded outreach for a human to review and send.
 
 ```text
-NY achieves 72% postpartum care completion.
-This Birthing-Friendly hospital's HCAHPS discharge score is 14 points below the national average.
+NY achieves 82.4% postpartum visit completion.
+This Birthing-Friendly hospital scores 1 star on HCAHPS discharge information.
 ```
 
 ## What It Does
 
-ECHO gives a GTM Engineer a daily prioritized account list and three outreach
-variants per high/medium account.
+ECHO gives a GTM Engineer a prioritized account list and three outreach variants per high/medium, high-confidence account.
 
 The human stays in control:
 
@@ -30,13 +26,11 @@ v1 is intentionally narrow:
 - NY demo territory.
 - CMS Birthing-Friendly hospitals.
 - Hospital-level HCAHPS patient experience.
-- State-level postpartum care baseline.
+- State-level postpartum visit benchmark.
 - OpenRouter email generation with cached fallback.
 - Terminal human checkpoint.
 
-Hospital-level severe maternal morbidity, hospital postpartum visit rates,
-readmissions, Medicaid payer mix, silent-gap mode, CRM integration, and
-Anthropic are v2.
+Hospital-level severe morbidity, readmissions, maternal quality scores, Medicaid payer mix, silent-gap mode, CRM integration, per-hospital curated commitment tags, and Anthropic are v2.
 
 ## Pipeline
 
@@ -51,15 +45,29 @@ commitment_ingester
 
 One hospital dict travels through the full pipeline. Each tool only adds fields.
 
+## v0.2 Data Fields
+
+Primary v1 fields:
+
+- `discharge_info_star`
+- `discharge_help_pct`
+- `overall_star`
+- `state_postpartum_visit_rate`
+- `state_postpartum_visit_year`
+- `medicaid_extended`
+- `racial_disparity_flag`
+
+Removed v0.1 fields such as `compared_to_national`, `postpartum_visit_pct`, `severe_morbidity_rate`, `readmission_penalty`, and `medicaid_pct` are v2.
+
 ## Data Sources
 
-| Source | v1 Use |
+| Source file | v1 use |
 |---|---|
-| CMS Hospital General Information | Hospital identity and Birthing-Friendly designation |
-| CMS HCAHPS | Hospital discharge communication and care transition scores |
-| CMS Medicaid Adult Core Set PPC-AD | State postpartum care completion baseline |
-| NCHS maternal mortality data | State urgency context |
-| KFF postpartum Medicaid tracker | State Medicaid extension context |
+| `Birthing_Friendly_Hospitals_Geocoded.csv` | Birthing-Friendly universe, address, ZIP, lat/lon |
+| `HCAHPS-Hospital.csv` | CCN, county, discharge information star, discharge help percent, overall star, survey dates |
+| `core-set-data-dashboard...postpartum-care...csv` | State postpartum visit rate and reporting year |
+| `raw_data.csv` | KFF Medicaid extension context |
+| `hestat113.pdf` | Racial disparity context |
 | OpenRouter API | Three grounded outreach variants |
 
 ## Team Ownership
@@ -67,7 +75,7 @@ One hospital dict travels through the full pipeline. Each tool only adds fields.
 | Owner | Files |
 |---|---|
 | Jonel | `src/commitment_ingester.py`, `src/outcome_scorer.py` |
-| Luba | `src/gap_calculator.py`, `src/urgency_ranker.py` |
+| Luba | `tests/fixtures.py`, `src/gap_calculator.py`, `src/urgency_ranker.py` |
 | Paula | `src/outbound_generator.py`, `src/human_checkpoint.py` |
 | Team | `src/agent.py`, `tests/test_pipeline.py` |
 
@@ -80,8 +88,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Add `OPENROUTER_API_KEY` to `.env` for live generation. Without it, the outbound
-generator should use cached fallback templates.
+Add `OPENROUTER_API_KEY` to `.env` for live generation. Without it, the outbound generator should use cached fallback templates.
 
 ## Run
 

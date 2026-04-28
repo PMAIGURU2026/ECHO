@@ -1,7 +1,6 @@
 # ECHO v1 Build Plan
 
-This plan follows `prd.md` and `SCHEMA.md`. If there is a conflict, `SCHEMA.md`
-wins for field names, allowed values, null handling, and pipeline contracts.
+This plan follows `prd.md` and `SCHEMA.md`. If there is a conflict, `SCHEMA.md` wins for field names, allowed values, null handling, and pipeline contracts.
 
 ## Goal
 
@@ -11,28 +10,24 @@ Build the v1 ECHO pipeline:
 commitment_ingester -> outcome_scorer -> gap_calculator -> urgency_ranker -> outbound_generator -> human_checkpoint
 ```
 
-One hospital dict moves through the full pipeline. Each tool only adds fields.
-No tool removes or renames fields.
+One hospital dict moves through the full pipeline. Each tool only adds fields. No tool removes or renames fields.
 
 v1 detects a within-state mismatch:
 
 ```text
 CMS Birthing-Friendly commitment
 + hospital HCAHPS patient experience lag
-+ state postpartum care strength
++ state postpartum visit strength
 ```
 
-v1 uses OpenRouter for email generation. Anthropic is v2 only.
-v1 uses CMS Birthing-Friendly as the only commitment source.
-v1 should use local CSV files in `data/` for demo reliability. Do not build
-live web scraping or rely on live API calls in the core pipeline.
+v1 uses local data files in `data/` for demo reliability. Do not build live scraping or rely on live API calls in the core pipeline. v1 uses OpenRouter for email generation with cached fallback. Anthropic is v2 only.
 
 ## Source Of Truth
 
 Read in this order before implementation:
 
 1. `prd.md` - product direction and scope.
-2. `SCHEMA.md` - exact field names, allowed values, and null rules.
+2. `SCHEMA.md` - exact field names, allowed values, null rules, and file dependencies.
 3. `tests/fixtures.py` - shared test hospitals.
 4. This file - build order and ownership.
 
@@ -40,21 +35,23 @@ Do not implement any field or feature that is not in `SCHEMA.md`.
 
 ## v1 Scope
 
-In v1, hospital-level outcome data is HCAHPS only.
-
-In v1, commitment data is CMS Birthing-Friendly only. Do not add ACOG,
-collaborative, press-release, or manually researched commitment sources.
-
 Use these v1 outcome fields:
+
+- `discharge_info_star`
+- `discharge_help_pct`
+- `overall_star`
+- `state_postpartum_visit_rate`
+- `state_postpartum_visit_year`
+- `hcahps_start_date`
+- `hcahps_end_date`
+
+Do not use these old/v2 fields in v1:
 
 - `hcahps_discharge_score`
 - `hcahps_discharge_national_avg`
 - `hcahps_care_transition_score`
 - `state_postpartum_care_pct`
 - `compared_to_national`
-
-Do not use these old/v2 fields in v1:
-
 - `severe_morbidity_rate`
 - `postpartum_visit_pct`
 - `well_baby_visit_pct`
@@ -79,7 +76,7 @@ Valid v1 `generation_method` values:
 | Owner | Files | Responsibility |
 |---|---|---|
 | Jonel | `src/commitment_ingester.py`, `src/outcome_scorer.py`, `tests/test_commitment_ingester.py`, `tests/test_outcome_scorer.py` | Data layer |
-| Luba | `src/gap_calculator.py`, `src/urgency_ranker.py`, `tests/test_gap_calculator.py`, `tests/test_urgency_ranker.py` | Scoring and ranking |
+| Luba | `tests/fixtures.py`, `src/gap_calculator.py`, `src/urgency_ranker.py`, `tests/test_gap_calculator.py`, `tests/test_urgency_ranker.py` | Fixtures, scoring, ranking |
 | Paula | `src/outbound_generator.py`, `src/human_checkpoint.py`, `tests/test_outbound_generator.py`, `tests/test_human_checkpoint.py`, `data/email_cache.json` | Email generation and human review |
 | Team | `src/agent.py`, `tests/test_pipeline.py` | End-to-end integration |
 
@@ -91,12 +88,13 @@ Do not edit another owner's files without flagging the reason.
 
 Owner: Luba
 
-Status: shipped, but verify before implementation.
+Status: update first to match `SCHEMA.md` v0.2.
 
 Acceptance criteria:
 
 - `tests/fixtures.py` uses only fields from `SCHEMA.md`.
-- Fixtures cover high, medium, low, null-data, and no-commitment cases.
+- Fixtures cover high, medium, low, null-data, and no-commitment/silent-gap v2 guard cases.
+- Fixtures do not include removed v0.1 fields.
 - No test file defines its own hospital fixtures.
 
 ### Task 1 - Commitment Ingester Tests
@@ -109,11 +107,11 @@ Test requirements:
 
 - `get_hospital_commitments()` returns a non-empty list.
 - Every hospital has all Tool 1 schema fields.
-- `facility_id` is a string.
+- `facility_id` is a string CCN sourced through HCAHPS matching.
 - `state` is two-letter uppercase.
-- `birthing_friendly` is boolean.
-- v1 returned hospitals have `has_commitment is True`.
-- `commitment_tag` is a specific sentence or `None`, never an empty string or category label.
+- `birthing_friendly` is boolean and true for v1 hospitals.
+- `commitment_tag` equals the v1 default: `Earned the CMS Birthing-Friendly designation`.
+- `commitment_source` equals `CMS Birthing-Friendly Registry`.
 
 Run:
 
@@ -131,17 +129,17 @@ Create `src/commitment_ingester.py`.
 
 Data inputs:
 
-- `data/Hospital_General_Information.csv`
+- `data/Birthing_Friendly_Hospitals_Geocoded.csv`
+- `data/HCAHPS-Hospital.csv`
 
 Acceptance criteria:
 
 - Returns Tool 1 fields exactly as defined in `SCHEMA.md`.
-- Uses `facility_id` as the join key.
-- Keeps `state` uppercase.
-- Filters to CMS Birthing-Friendly hospitals for the v1 territory.
-- Sets `commitment_source` to `CMS`.
-- Does not skip hospitals because of partial CMS data.
-- Missing values are `None`, not `0`.
+- Filters to CMS Birthing-Friendly hospitals for v1.
+- Uses name normalization to match BF registry hospitals to HCAHPS rows and recover `facility_id` (CCN).
+- Drops hospitals that still cannot be matched after normalization, with a logged warning.
+- Sets v1 default commitment tag/source.
+- Missing optional values are `None`, not `0`.
 
 Run:
 
@@ -158,11 +156,13 @@ Create `tests/test_outcome_scorer.py`.
 Test requirements:
 
 - `score_outcomes(hospitals)` does not drop hospitals.
-- Adds only the v1 outcome fields from `SCHEMA.md`.
-- `compared_to_national` is exactly `Better`, `Same`, or `Worse`.
-- If `hcahps_discharge_score` is present, `hcahps_discharge_national_avg` is present.
+- Adds only Tool 2 v0.2 fields.
+- `discharge_info_star` is `None` or int 1-5.
+- `overall_star` is `None` or int 1-5.
+- `discharge_help_pct` is `None` or float.
+- `state_postpartum_visit_rate` and `state_postpartum_visit_year` are present.
 - Missing HCAHPS fields are `None`, not `0`.
-- HCAHPS scores have the expected numeric types when present.
+- Removed v0.1 fields are not added.
 
 Run:
 
@@ -181,17 +181,17 @@ Create `src/outcome_scorer.py`.
 Data inputs:
 
 - `data/HCAHPS-Hospital.csv`
-- `data/Adult_Core_Set_PPC-AD.csv`
+- `data/core-set-data-dashboard...postpartum-care...csv` or a renamed local equivalent documented in the module
 
 Acceptance criteria:
 
-- Adds `hcahps_discharge_score`.
-- Adds `hcahps_discharge_national_avg`.
-- Adds `hcahps_care_transition_score`.
-- Adds `state_postpartum_care_pct`.
-- Adds `compared_to_national`.
-- Does not add old/v2 hospital-level fields.
-- Documents the exact HCAHPS measure IDs used after the real CSV is inspected.
+- Adds `discharge_info_star` from `H_COMP_6_STAR_RATING`.
+- Adds `discharge_help_pct` from `H_DISCH_HELP_Y_P`.
+- Adds `overall_star` from `H_STAR_RATING`.
+- Adds `state_postpartum_visit_rate`.
+- Adds `state_postpartum_visit_year`.
+- Adds `hcahps_start_date` and `hcahps_end_date`.
+- Does not add removed v0.1 fields.
 
 Run:
 
@@ -212,11 +212,14 @@ Test requirements:
 - `calculate_gap_score(hospital)` returns the same dict with added Tool 3 fields.
 - Intermediate `gap_score` is a float from 0 to 75.
 - `lead_angle` is one of the three v1 values.
+- Lead angle cascade is exact:
+- `overall_star` 1 or 2 -> `hcahps_care_transition_gap`.
+- `discharge_info_star` 1 or 2 -> `hcahps_discharge_gap`.
+- Otherwise -> `state_strength_vs_hospital_lag`.
 - `gap_breakdown` contains `commitment_strength`, `outcome_gap`, and `urgency_context`.
 - `urgency_context` is `0` after Tool 3.
 - High-gap fixture scores above low-gap fixture.
-- `data_confidence` is `low` only when both HCAHPS fields are `None`.
-- `has_commitment=False` raises `ValueError`.
+- `data_confidence` is `low` only when both `discharge_info_star` and `overall_star` are `None`.
 - Null HCAHPS data does not crash.
 
 Run:
@@ -235,8 +238,8 @@ Create `src/gap_calculator.py`.
 
 Acceptance criteria:
 
-- Uses only HCAHPS/state postpartum v1 fields.
-- Does not reference dropped fields like `postpartum_visit_pct` or `severe_morbidity_rate`.
+- Uses only v0.2 fields.
+- Does not reference dropped v0.1 fields.
 - Uses `hospital.get("field") is not None` before calculations that may receive nulls.
 - Sets `data_confidence` exactly as defined in `SCHEMA.md`.
 - Produces one of the three valid v1 `lead_angle` values.
@@ -259,6 +262,7 @@ Test requirements:
 - Final `gap_score` is a float from 0 to 100.
 - `urgency_tier` is exactly `high`, `medium`, or `low`.
 - `urgency_flag` is exactly one of the three schema strings.
+- Adds `medicaid_extended` and `racial_disparity_flag`.
 - `gap_breakdown["urgency_context"]` is filled in and is between 0 and 25.
 - Missing `gap_score` or `gap_breakdown` raises `KeyError`.
 
@@ -278,14 +282,15 @@ Create `src/urgency_ranker.py`.
 
 Data inputs:
 
-- `data/kff_state_data.csv`
-- `data/nchs_mortality_export.csv`
+- `data/raw_data.csv` (KFF)
+- `data/hestat113.pdf` or manually extracted constants from the PDF
 
 Acceptance criteria:
 
-- Adds state mortality, Medicaid extension, and racial disparity context.
+- Adds Medicaid extension and racial disparity context.
 - Updates intermediate Tool 3 `gap_score` to final Tool 4 `gap_score`.
 - Sets `urgency_tier` and `urgency_flag` exactly per schema.
+- Does not add `state_mortality_rate` or `state_mortality_rank` unless schema changes again.
 - Does not rank hospitals against each other inside this function.
 
 Run:
@@ -304,13 +309,14 @@ Create `tests/test_outbound_generator.py`.
 
 Test requirements:
 
-- Low urgency hospitals do not get emails.
+- Low urgency and low-confidence hospitals do not get emails.
 - High and medium urgency hospitals get emails.
 - Email object has all Tool 5 schema fields.
 - Each email has `body_moral`, `body_clinical`, and `body_financial`.
 - `generation_method` is exactly `openrouter_api` or `cached_fallback`.
 - Fallback triggers when required grounding fields are null.
 - Fallback triggers when the OpenRouter call fails.
+- Financial variant uses state-level Medicaid context, not `medicaid_pct`.
 - No body contains hardcoded vendor names.
 - Bodies include `[COMPANY_NAME]` and `[SOCIAL_PROOF]` placeholders.
 - `urgency_tier` is copied from the hospital dict.
@@ -399,8 +405,8 @@ Test requirements:
 - Dict fields only grow after each tool.
 - Tool 3 `gap_score` is <= 75.
 - Tool 4 `gap_score` is <= 100.
-- Emails are created only for high/medium hospitals.
-- Null-data hospital is retained and flagged with low confidence.
+- Emails are created only for high/medium, high-confidence hospitals.
+- Null-data hospital is retained through Tool 4 and skipped by Tool 5.
 
 Run:
 
@@ -412,8 +418,7 @@ Run:
 
 Owner: Team
 
-Refactor `src/agent.py` so it orchestrates the separate modules instead of
-embedding tool implementations.
+Refactor `src/agent.py` so it orchestrates the separate modules instead of embedding tool implementations.
 
 Acceptance criteria:
 
@@ -440,7 +445,7 @@ Expected final behavior:
 
 - All tests pass.
 - The NY run uses real NY hospitals.
-- High/medium accounts get three email variants.
+- High/medium, high-confidence accounts get three email variants.
 - Email generation uses OpenRouter or cached fallback.
 - Human checkpoint is displayed.
 - Nothing is sent automatically.

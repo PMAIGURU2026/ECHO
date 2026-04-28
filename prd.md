@@ -12,7 +12,7 @@
 **How we know it's real:**
 - 2,265 hospitals have earned the CMS Birthing-Friendly designation (CMS Provider Data Catalog, 2025)
 - Maternal mortality rate in the US was 17.9 per 100,000 live births in 2024; Black women die at 3x the rate of White women, with the gap widening post-pandemic (NCHS Health E-Stat 113, March 2026; Kamijo et al., Cureus 2025)
-- Brooklyn validation sample: 5 of 5 NY Birthing-Friendly hospitals scored below the national HCAHPS discharge communication average — even though NY is a top-quartile state on postpartum care metrics. Hospital-level performance lags state-level strength.
+- Brooklyn validation sample: NY Birthing-Friendly hospitals show measurable HCAHPS patient experience scores well below what the state's strong Medicaid postpartum performance would predict. NY achieves 82.4% postpartum care completion (top quartile nationally) yet hospital-level patient experience varies widely. Hospital-level performance lags state-level strength.
 - Maternal health data lives in at least 9 federal and non-federal sources that don't cross-reference each other
 
 ## Target User
@@ -36,9 +36,9 @@
 
 **Core mismatch logic (within-state comparison):**
 
-> *"NY state achieves [X%] postpartum care completion. This Birthing-Friendly hospital's HCAHPS discharge communication score is [Y] points below the national average, suggesting their patients aren't benefiting from the state's overall strength."*
+> *"NY state achieves [X%] postpartum care completion across Medicaid managed care. This Birthing-Friendly hospital scores [Y] stars on HCAHPS patient experience, suggesting their patients aren't benefiting from the state's overall strength."*
 
-The state aggregate becomes the *expectation* hospitals should be meeting. Hospital-level scores below state strength reveal which Birthing-Friendly hospitals are dragging behind.
+The state aggregate becomes the *expectation* hospitals should be meeting. Hospital-level HCAHPS scores well below state strength reveal which Birthing-Friendly hospitals are dragging behind.
 
 **Core user flow:**
 1. GTM Engineer opens dashboard → sees Today's Critical 10 ranked by mismatch severity
@@ -54,7 +54,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 **Step 1: Reviewing the daily 10**
 - [P0] User can see a ranked list of 10 hospitals scored CRITICAL, HIGH, ELEVATED, or WATCH
 - [P0] User can see hospital name, location, CCN identifier, and a one-sentence top mismatch summary per row
-- [P0] User can see severity badge, outcome delta vs. state and national averages, and confidence percentage per row
+- [P0] User can see severity badge, hospital-level HCAHPS scores, the state benchmark they're being compared against, and confidence percentage per row
 - [P0] User can see the territory toolbar showing the count and source ("New York · 101 hospitals · monitored against CMS Birthing-Friendly registry")
 - [P1] User can filter by severity tier
 - [P1] User can see a stats strip showing critical mismatches today, high severity count, and average confidence
@@ -63,10 +63,10 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 **Step 2: Drilling into a briefing card**
 - [P0] User can click any of the 10 accounts to see a full briefing card
 - [P0] User can see hospital metadata: name, location, parent system, CCN, beds and deliveries per year if available
-- [P0] User can see each commitment-outcome mismatch with the commitment, the state aggregate, the hospital-level score, the recency, and the gap visualization
+- [P0] User can see each commitment-outcome mismatch with the commitment, the state aggregate, the hospital-level HCAHPS score, the recency, and the gap visualization
 - [P0] User can see source links beneath every commitment, state-level outcome, and hospital-level outcome claim
-- [P0] User can see the Birthing-Friendly designation date as the commitment
-- [P0] User can see context signals (state postpartum Medicaid coverage, maternity care desert status, recent leadership changes if known)
+- [P0] User can see the Birthing-Friendly designation as the commitment (v1 default for all hospitals; v2 adds curated per-hospital tags)
+- [P0] User can see context signals (state postpartum Medicaid coverage, racial disparity flag, recent leadership changes if known)
 - [P0] User can see a confidence breakdown per mismatch with a brief explanation of why confidence is reduced when applicable
 - [P0] User can see "data unavailable" displayed neutrally with a confidence flag when an outcome metric is missing
 - [P1] User can see a judgment call callout flagging context the agent thinks the human should weigh
@@ -79,41 +79,51 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 - [P1] User can add an account to a watchlist for tomorrow
 - [P2] User can hand off to an external CRM via "Open in [CRM]" button
 
-> **Briefing card field list:** specified by the existing mockup HTML. Mockup will be updated to match v1 scope (NY-only, Birthing-Friendly only, within-state mismatch framing, three angles preserved). No additional design pass needed.
+> **Briefing card field list:** specified by the existing mockup HTML. Mockup needs an update pass to match v1 scope (NY-only, Birthing-Friendly only, within-state mismatch framing using HCAHPS star ratings, three angles preserved). Paula owns the update.
 
 ### Out of Scope (for v1)
 - **Sending email.** ECHO never sends email. The GTM Engineer copies a draft and sends from their own tool.
-- **Reliable API uptime.** v1 depends on the OpenRouter API for email generation. If API is down or slow during demo, fallback is cached static templates pre-generated the night before. v2 swaps to Anthropic API.
-- **Hospital-level outcome data beyond HCAHPS.** v1 uses HCAHPS for hospital-level patient experience. Other hospital-level metrics (severe maternal morbidity per hospital, AIM Data Center metrics) are v2.
-- **Multiple commitment sources.** v1 uses CMS Birthing-Friendly designation only. v2 may add AIM bundle participation, NNPQC PQC membership, Joint Commission Perinatal Care certification, and hospital newsroom press releases.
+- **Reliable API uptime.** v1 depends on the OpenRouter API for email generation. If API is down or slow during demo, fallback is cached static templates pre-generated the night before. v2 may swap to Anthropic API.
+- **Hospital-level outcome data beyond HCAHPS.** v1 uses three HCAHPS signals per hospital: discharge information composite star (H_COMP_6), summary star rating (H_STAR_RATING), and discharge help YES percent (H_DISCH_HELP_Y_P). Other hospital-level metrics (severe maternal morbidity per hospital, AIM Data Center metrics, hospital-level readmissions) are v2.
+- **Multiple commitment sources.** v1 uses CMS Birthing-Friendly designation only, and every v1 hospital shares one default commitment tag. v2 adds curated per-hospital tags from AIM bundle participation, NNPQC PQC membership, Joint Commission Perinatal Care certification, and hospital newsroom press releases.
+- **Hospital-level Medicaid mix.** v1's financial email variant uses state-level Medicaid context (NY's 12-month postpartum coverage from KFF) instead of hospital-level Medicaid payer mix. Hospital-level Medicaid mix is v2.
 - **Outreach angle expansion beyond the three v1 variants.** v1 ships moral, clinical, and financial leads. v2 may add cost-of-poor-outcomes, peer benchmarking, and regulatory pressure variants.
 - **National territory display.** v1 demos NY-only (101 Birthing-Friendly hospitals). Backend ingests national data and could display all states; the NY filter is a demo choice, not a data limitation.
 - **Patient-facing surface.** ECHO never communicates with patients. The agent's only audience is the GTM Engineer.
 - **Leapfrog Hospital Survey data.** Licensed data not included in v1.
 - **Real-time alerts or sub-daily cadence.** v1 refreshes daily.
 - **Customer discovery validation.** No external user interviews in v1 scope. Acknowledged as next-phase work.
-- **Visual design mockup as separate deliverable.** Existing mockup HTML serves as spec.
+- **Visual design mockup as separate deliverable.** Existing mockup HTML serves as spec, pending Paula's v1-scope update.
 
 ## Data Sources
 
 | Data | Source | Format | Notes |
 |------|--------|--------|-------|
 | Birthing-Friendly hospital registry | CMS Provider Data Catalog | CSV (free) | 2,265 hospitals, geocoded; filter to NY for v1 demo (101 hospitals) |
-| State-level postpartum care visit completion | CMS Medicaid Adult Core Set (PPC-AD, PPC2-AD) | CSV (free, all 50 states) | NY top quartile; establishes state expectation baseline |
-| State-level prenatal care timeliness | CMS Medicaid Child Core Set (PPC-CH, PPC2-CH) | CSV (free, all 50 states) | NY top quartile |
-| State-level all-cause readmissions | CMS Medicaid Adult Core Set (PCR-AD) | CSV (free, all 50 states) | Includes postpartum populations; to be pulled |
-| State-level postpartum depression screening | CMS Medicaid Adult Core Set (PDS-AD) | CSV (free, all 50 states) | To be pulled |
-| State-level low-risk cesarean delivery | CMS Medicaid Maternity Core Set (LRCD-AD) | CSV (free, all 50 states) | Via state vital records; to be pulled |
-| Hospital-level HCAHPS patient experience | CMS Provider Data Catalog | CSV (free, ~4,000 hospitals) | **NEW IN V1** — required for within-state mismatch (Option 3) |
-| State-level maternal mortality | NCHS Health E-Stat 113 (March 2026) | PDF/structured (free) | 2024 data; cite undercount caveat |
-| Postpartum Medicaid coverage status | KFF Medicaid Postpartum Coverage Extension Tracker | CSV (free) | All 50 states + DC |
-| State perinatal quality collaborative status | NNPQC | Web/CSV (free) | State-level membership and funding status |
-| OpenRouter API | OpenRouter | REST API (free tier in v1; v2 swaps to Anthropic at ~$5-15/day) | **NEW IN V1** — Paula's email generation; key in `.env`, gitignored; fallback to static cache for demo reliability |
+| State-level postpartum care visit completion | CMS Medicaid Adult Core Set (PPC-AD) | CSV (free, all 50 states) | Primary state benchmark in `state_postpartum_visit_rate`. NY 82.4% (2023), top quartile. |
+| State-level prenatal care timeliness | CMS Medicaid Child Core Set (PPC-CH) | CSV (free, all 50 states) | NY 86.8% (2023), top quartile. Supporting context in briefing card sidebar; not used in scoring math. |
+| State-level postpartum care by age | CMS Medicaid Core Set (PPC2-AD, PPC2-CH) | CSV (free, all 50 states) | NY top quartile. Supporting context only. |
+| State-level postpartum contraceptive care | CMS Medicaid Child Core Set (CCP-CH) | CSV (free, all 50 states) | NY 47.2% (2024). Supporting context only. |
+| Hospital-level HCAHPS patient experience | CMS Provider Data Catalog | CSV (free, ~4,000 hospitals) | Required for within-state mismatch. v1 uses three measures: H_COMP_6_STAR_RATING (discharge information composite), H_STAR_RATING (summary star), H_DISCH_HELP_Y_P (discharge help YES percent). |
+| State-level maternal mortality | NCHS Health E-Stat 113 (March 2026) | PDF (free) | 2024 data; cite undercount caveat. Used to compute `racial_disparity_flag`. |
+| Postpartum Medicaid coverage status | KFF Medicaid Postpartum Coverage Extension Tracker | CSV (free) | All 50 states + DC. NY = 12-month coverage implemented June 2023. Drives `medicaid_extended` field and the financial email variant. |
+| State perinatal quality collaborative status | NNPQC | CSV (free) | State-level membership and funding status. NY = funded. |
+| Racial disparity context | Kamijo et al., Cureus 2025 | PDF (free, peer-reviewed) | Post-pandemic Black-White MMR gap widening. Cited in dashboard, not ingested per-hospital. |
+| OpenRouter API | OpenRouter | REST API (free tier in v1) | Email generation; key in `.env`, gitignored; fallback to static cache for demo reliability. |
 
 > **Adult Core Set source URL:** https://www.medicaid.gov/medicaid/quality-of-care/core-set-data-dashboard/welcome
 > **Hospital HCAHPS source URL:** https://data.cms.gov/provider-data/dataset/dgck-syfz
 > **OpenRouter API docs:** https://openrouter.ai/docs (v1)
-> **Anthropic API docs:** https://docs.anthropic.com/ (v2)
+> **Anthropic API docs:** https://docs.anthropic.com/ (potential v2)
+
+**v2 expansion sources (not in v1):**
+- State-level all-cause readmissions (CMS Medicaid Adult Core Set, PCR-AD)
+- State-level postpartum depression screening (CMS Medicaid Adult Core Set, PDS-AD)
+- State-level low-risk cesarean delivery (CMS Medicaid Maternity Core Set, LRCD-AD)
+- Hospital-level severe maternal morbidity (CMS Maternal Health Hospital file)
+- Hospital-level readmissions penalties (CMS FY2025 Hospital Readmissions Reduction Program)
+- Hospital-level Medicaid payer mix (CMS Hospital Provider Cost Report)
+- Curated per-hospital commitment tags (PQC membership, AIM bundles, press releases)
 
 ## Success Metrics
 
@@ -121,7 +131,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 |------|--------|--------|--------|
 | Demo Day usability | Judges understand ECHO's value in under 60 seconds | Time from demo start to "I get it" reaction | Under 60 seconds |
 | Architecture defensibility | Interviewer asks "where does the data come from" and gets a clean answer | Number of source links visible per briefing card | At least 1 source link per claim, no exceptions |
-| Mismatch logic validity | NY Birthing-Friendly hospitals show measurable below-state-aggregate hospital-level scores | Percent of NY-101 hospitals with at least one defensible within-state mismatch | At least 50% (Brooklyn validation showed 5 of 5) |
+| Mismatch logic validity | NY Birthing-Friendly hospitals show measurable hospital-level HCAHPS lag against state strength | Percent of NY-101 hospitals with at least one defensible within-state mismatch surfaced by ECHO | At least 50% |
 | Email quality | Generated emails reference only ECHO's underlying data with no hallucinated claims | Percent of test emails that pass manual review | 100% |
 | Build completion | All 6 tools shipped and integrated | Tools complete and producing output by Demo Day | 6 of 6 |
 | Honest framing | Confidence flags appear when data is missing | Percent of briefing cards with at least one confidence indicator | 100% of cards show confidence breakdown |
@@ -132,7 +142,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 |----------|------------------|----------------|-------|
 | **Time** | GTM Engineer spends estimated 2–4 hours per week manually researching territory accounts across CMS, CDC, KFF, March of Dimes, plus drafting outreach for each | Daily 10 surfaced in seconds; review takes 5–10 minutes; three email drafts per account ready to copy | Estimated 3–6 hours per week per GTM Engineer |
 | **Coverage** | Manual review covers maybe 10–20% of territory accounts in detail | Agent monitors 100% of Birthing-Friendly hospitals daily | Full territory coverage vs. partial |
-| **Build cost** | — | ~3 weeks build time across 3-person team; free OpenRouter tier in v1 (~$5-15/day Anthropic in v2) | Demo Day deliverable |
+| **Build cost** | — | ~3 weeks build time across 3-person team; free OpenRouter tier in v1 | Demo Day deliverable |
 
 **One-line pitch:** ECHO replaces manual cross-referencing of fragmented federal maternal health data with a daily ranked list of the 10 Birthing-Friendly hospitals in a GTM Engineer's territory whose patient experience is dragging behind their state's strength, plus three drafted outreach variants per account ready to copy and send.
 
@@ -150,10 +160,10 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 
 **Operations / Engineering:**
 - All v1 outcome and commitment data sources are free public CSVs and APIs. No HIPAA-sensitive data. No PII.
-- v1 uses OpenRouter free tier; v2 swaps to Anthropic API (paid, estimated $5-15/day at full scale of 101 hospitals × 3 variants daily; less during demo testing).
+- v1 uses OpenRouter free tier; v2 may swap to Anthropic API (paid).
 - Daily refresh runs against static or slowly-changing federal data. No real-time pipeline required for v1.
 - API outage = email generation breaks. Cached static fallback required for Demo Day reliability.
-- If CMS or CDC sources change URLs or formats (real risk given proposed FY27 HHS reorganization), the data layer is the only piece that needs updating
+- If CMS or CDC sources change URLs or formats (real risk given proposed FY27 HHS reorganization), the data layer is the only piece that needs updating.
 
 **Legal / Compliance:**
 - All data sources are public and free to use
@@ -176,7 +186,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 ## Open Questions
 
 - [ ] **Honesty stance for v1 limitations.** Do we lean fully into honest framing in the dashboard copy and demo script, or smooth over what's curated vs. automated? Suggestion: lean honest. (Question 9 in team_questions.md)
-- [ ] **One-page v2 roadmap doc.** Five PRD sections reference v2 (commitment scope expansion, additional hospital-level metrics, additional outreach angles, customizable cadence, AIM Data Center integration). A short v2 roadmap as a v1 deliverable would make the demo more defensible.
-- [ ] **Mockup update.** Paula updates the existing mockup HTML this week to match v1 scope. Team reviews together so Jonel can confirm the data layer schema matches what the briefing card expects.
-- [ ] **Model choice.** v1 uses OpenRouter free tier (current model: `tencent/hy3-preview:free`, configurable via `OPENROUTER_MODEL` env var). v2 evaluates Anthropic Sonnet 4.6 vs Opus 4.7 vs Haiku 4.5 for quality/cost balance.
+- [ ] **One-page v2 roadmap doc.** Multiple PRD sections reference v2 (commitment scope expansion, additional hospital-level metrics, additional outreach angles, customizable cadence, AIM Data Center integration). A short v2 roadmap as a v1 deliverable would make the demo more defensible.
+- [ ] **Mockup update.** Paula updates the existing mockup HTML to match v1 scope. Team reviews together so Jonel can confirm the data layer schema matches what the briefing card expects.
+- [ ] **Model choice.** v1 uses OpenRouter free tier (current model: `tencent/hy3-preview:free`, configurable via `OPENROUTER_MODEL` env var). Model selection lives in Paula's code, not the schema.
 - [ ] **Email generation cache strategy.** Generate live during dashboard open, or pre-generate nightly and serve from cache? Cache is safer for demo reliability; live is more impressive. Paula and Luba decide together.
