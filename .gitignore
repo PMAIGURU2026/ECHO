@@ -1,0 +1,31 @@
+# secrets
+.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# data files (download fresh from CMS/CDC/KFF — don't commit large CSVs)
+data/*.csv
+data/*.json
+data/*.xlsx
+
+# logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# mac
+.DS_Store
+.claude/
