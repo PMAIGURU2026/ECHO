@@ -1,4 +1,17 @@
-# ECHO v1 Scaffold Implementation Plan
+# OBSOLETE - ECHO v1 Scaffold Implementation Plan
+
+This file is historical scaffold context only. Do not implement from it.
+
+Current source of truth:
+
+- `prd.md`
+- `SCHEMA.md`
+- `PLAN.md`
+
+The current v1 scope uses HCAHPS hospital-level patient experience plus
+state-level postpartum care baseline. This old scaffold references earlier
+postpartum visit, severe morbidity, readmission, and well-baby logic that is no
+longer v1.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

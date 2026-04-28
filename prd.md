@@ -83,7 +83,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 
 ### Out of Scope (for v1)
 - **Sending email.** ECHO never sends email. The GTM Engineer copies a draft and sends from their own tool.
-- **Reliable API uptime.** v1 depends on the Anthropic API for email generation. If API is down or slow during demo, fallback is cached static templates pre-generated the night before.
+- **Reliable API uptime.** v1 depends on the OpenRouter API for email generation. If API is down or slow during demo, fallback is cached static templates pre-generated the night before. v2 swaps to Anthropic API.
 - **Hospital-level outcome data beyond HCAHPS.** v1 uses HCAHPS for hospital-level patient experience. Other hospital-level metrics (severe maternal morbidity per hospital, AIM Data Center metrics) are v2.
 - **Multiple commitment sources.** v1 uses CMS Birthing-Friendly designation only. v2 may add AIM bundle participation, NNPQC PQC membership, Joint Commission Perinatal Care certification, and hospital newsroom press releases.
 - **Outreach angle expansion beyond the three v1 variants.** v1 ships moral, clinical, and financial leads. v2 may add cost-of-poor-outcomes, peer benchmarking, and regulatory pressure variants.
@@ -108,11 +108,12 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 | State-level maternal mortality | NCHS Health E-Stat 113 (March 2026) | PDF/structured (free) | 2024 data; cite undercount caveat |
 | Postpartum Medicaid coverage status | KFF Medicaid Postpartum Coverage Extension Tracker | CSV (free) | All 50 states + DC |
 | State perinatal quality collaborative status | NNPQC | Web/CSV (free) | State-level membership and funding status |
-| Anthropic API | Anthropic | REST API (per-token cost, ~$5-15/day at full scale) | **NEW IN V1** — Paula's email generation; key in `.env`, gitignored; fallback to static cache for demo reliability |
+| OpenRouter API | OpenRouter | REST API (free tier in v1; v2 swaps to Anthropic at ~$5-15/day) | **NEW IN V1** — Paula's email generation; key in `.env`, gitignored; fallback to static cache for demo reliability |
 
 > **Adult Core Set source URL:** https://www.medicaid.gov/medicaid/quality-of-care/core-set-data-dashboard/welcome
 > **Hospital HCAHPS source URL:** https://data.cms.gov/provider-data/dataset/dgck-syfz
-> **Anthropic API docs:** https://docs.anthropic.com/
+> **OpenRouter API docs:** https://openrouter.ai/docs (v1)
+> **Anthropic API docs:** https://docs.anthropic.com/ (v2)
 
 ## Success Metrics
 
@@ -131,7 +132,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 |----------|------------------|----------------|-------|
 | **Time** | GTM Engineer spends estimated 2–4 hours per week manually researching territory accounts across CMS, CDC, KFF, March of Dimes, plus drafting outreach for each | Daily 10 surfaced in seconds; review takes 5–10 minutes; three email drafts per account ready to copy | Estimated 3–6 hours per week per GTM Engineer |
 | **Coverage** | Manual review covers maybe 10–20% of territory accounts in detail | Agent monitors 100% of Birthing-Friendly hospitals daily | Full territory coverage vs. partial |
-| **Build cost** | — | ~3 weeks build time across 3-person team + ~$5-15/day Anthropic API costs at full scale | Demo Day deliverable |
+| **Build cost** | — | ~3 weeks build time across 3-person team; free OpenRouter tier in v1 (~$5-15/day Anthropic in v2) | Demo Day deliverable |
 
 **One-line pitch:** ECHO replaces manual cross-referencing of fragmented federal maternal health data with a daily ranked list of the 10 Birthing-Friendly hospitals in a GTM Engineer's territory whose patient experience is dragging behind their state's strength, plus three drafted outreach variants per account ready to copy and send.
 
@@ -149,7 +150,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 
 **Operations / Engineering:**
 - All v1 outcome and commitment data sources are free public CSVs and APIs. No HIPAA-sensitive data. No PII.
-- Anthropic API is a paid dependency; estimated $5-15/day at full scale of 101 hospitals × 3 variants daily; less during demo testing.
+- v1 uses OpenRouter free tier; v2 swaps to Anthropic API (paid, estimated $5-15/day at full scale of 101 hospitals × 3 variants daily; less during demo testing).
 - Daily refresh runs against static or slowly-changing federal data. No real-time pipeline required for v1.
 - API outage = email generation breaks. Cached static fallback required for Demo Day reliability.
 - If CMS or CDC sources change URLs or formats (real risk given proposed FY27 HHS reorganization), the data layer is the only piece that needs updating
@@ -177,5 +178,5 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 - [ ] **Honesty stance for v1 limitations.** Do we lean fully into honest framing in the dashboard copy and demo script, or smooth over what's curated vs. automated? Suggestion: lean honest. (Question 9 in team_questions.md)
 - [ ] **One-page v2 roadmap doc.** Five PRD sections reference v2 (commitment scope expansion, additional hospital-level metrics, additional outreach angles, customizable cadence, AIM Data Center integration). A short v2 roadmap as a v1 deliverable would make the demo more defensible.
 - [ ] **Mockup update.** Paula updates the existing mockup HTML this week to match v1 scope. Team reviews together so Jonel can confirm the data layer schema matches what the briefing card expects.
-- [ ] **Anthropic model choice.** Sonnet 4.6 vs. Opus 4.7 vs. Haiku 4.5 for email generation. Sonnet recommended as quality/cost balance. Paula confirms.
+- [ ] **Model choice.** v1 uses OpenRouter free tier (current model: `tencent/hy3-preview:free`, configurable via `OPENROUTER_MODEL` env var). v2 evaluates Anthropic Sonnet 4.6 vs Opus 4.7 vs Haiku 4.5 for quality/cost balance.
 - [ ] **Email generation cache strategy.** Generate live during dashboard open, or pre-generate nightly and serve from cache? Cache is safer for demo reliability; live is more impressive. Paula and Luba decide together.
