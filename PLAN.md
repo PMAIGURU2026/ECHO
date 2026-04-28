@@ -131,7 +131,7 @@ Create `src/commitment_ingester.py`.
 Data inputs:
 
 - `data/Birthing_Friendly_Hospitals_Geocoded.csv`
-- `data/HCAHPS-Hospital.csv`
+- `data/HCAHPS-Hospital-NY.csv`
 
 Acceptance criteria:
 
@@ -181,7 +181,7 @@ Create `src/outcome_scorer.py`.
 
 Data inputs:
 
-- `data/HCAHPS-Hospital.csv`
+- `data/HCAHPS-Hospital-NY.csv`
 - `data/core-set-data-dashboard...postpartum-care...csv` or a renamed local equivalent documented in the module
 
 Acceptance criteria:
