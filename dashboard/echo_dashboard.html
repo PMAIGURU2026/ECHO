@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECHO Dashboard</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #0b1220;
+      --muted: #657084;
+      --line: #dfe3ea;
+      --blue: #1d4ed8;
+      --red: #b91c1c;
+      --amber: #b45309;
+      --green: #047857;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #eaf0ff 0, transparent 34rem), var(--bg);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.5;
+    }
+    .shell { max-width: 1180px; margin: 0 auto; padding: 32px 20px 64px; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-end;
+      margin-bottom: 22px;
+    }
+    .eyebrow {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, h4, p { margin-top: 0; }
+    h1 { margin-bottom: 6px; font-size: 38px; letter-spacing: -0.03em; }
+    .notice {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #7c2d12;
+      border-radius: 12px;
+      padding: 12px 14px;
+      max-width: 390px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 13px;
+    }
+    .summary {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-weight: 700;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .account-list {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+      position: sticky;
+      top: 16px;
+    }
+    .account-list h2 {
+      font-size: 17px;
+      margin: 4px 6px 12px;
+    }
+    .account-row {
+      appearance: none;
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+      padding: 12px;
+      border-radius: 13px;
+      cursor: pointer;
+      font: inherit;
+      margin-bottom: 6px;
+    }
+    .account-row:hover,
+    .account-row.active {
+      background: #f8fafc;
+      border-color: var(--line);
+    }
+    .account-row strong,
+    .account-row small {
+      display: block;
+    }
+    .account-row small {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+    .account-row b {
+      background: #0b1220;
+      border-radius: 10px;
+      color: white;
+      min-width: 58px;
+      padding: 8px;
+      text-align: center;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .hospital-card {
+      display: none;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    .hospital-card.active { display: block; }
+    .hospital-card.high { border-left-color: var(--red); }
+    .hospital-card.medium { border-left-color: var(--amber); }
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    h3 { margin-bottom: 8px; font-size: 25px; letter-spacing: -0.02em; }
+    .score-block {
+      min-width: 120px;
+      background: #0b1220;
+      color: white;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .score { display: block; font-size: 28px; font-weight: 800; }
+    .score-label { color: #cbd5e1; font-size: 11px; text-transform: uppercase; }
+    .status-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
+    .badge {
+      background: #eef2ff;
+      color: #1e3a8a;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .flag { background: #fff1f2; color: #9f1239; }
+    .confidence { background: #ecfdf5; color: var(--green); }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .metric { border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+    .metric-label {
+      display: block;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .metric-value { font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; }
+    .email-panel {
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .email-panel.empty { color: var(--muted); }
+    .email-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .email-meta h4 { margin-bottom: 2px; font-size: 17px; }
+    .email-meta span {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      color: var(--blue);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      padding: 5px 9px;
+      white-space: nowrap;
+    }
+    .email-role { color: var(--muted); }
+    .variant-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .variant-tab {
+      appearance: none;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      padding: 11px;
+      text-align: left;
+    }
+    .variant-tab:hover,
+    .variant-tab.active {
+      background: #0b1220;
+      border-color: #0b1220;
+      color: white;
+    }
+    .variant-tab span,
+    .variant-tab small {
+      display: block;
+    }
+    .variant-tab span { font-weight: 800; }
+    .variant-tab small {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+    .variant-tab.active small { color: #cbd5e1; }
+    .variant-stage {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      min-height: 170px;
+      padding: 16px;
+    }
+    .variant-content { display: none; }
+    .variant-content.active { display: block; }
+    .variant-content p {
+      font-size: 15px;
+      line-height: 1.65;
+      margin-bottom: 0;
+      white-space: pre-wrap;
+    }
+    .variant-label {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .copy-note {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    @media (max-width: 760px) {
+      .topbar, .card-head, .email-meta { display: block; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .account-list { position: static; }
+      .metrics { grid-template-columns: 1fr; }
+      .variant-tabs { grid-template-columns: 1fr; }
+      .score-block { margin-top: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">ECHO / Human Review Dashboard</div>
+        <h1>Today's Critical Accounts</h1>
+        <p>Ranked by commitment-outcome mismatch using schema v0.2 fields.</p>
+      </div>
+      <aside class="notice">
+        No email has been sent. A human must review, copy, and send from their own tool.
+      </aside>
+    </header>
+    <section class="summary">[HIGH] 1 accounts | [MEDIUM] 1 accounts | Total emails queued: 2</section>
+    <section class="dashboard-grid">
+      <nav class="account-list" aria-label="Hospital accounts">
+        <h2>Hospitals</h2>
+        
+      <button class="account-row active" data-target="hospital-330101">
+        <span>
+          <strong>Test High Gap Hospital</strong>
+          <small>high / hcahps_care_transition_gap</small>
+        </span>
+        <b>100.0</b>
+      </button>
+    
+
+      <button class="account-row" data-target="hospital-330102">
+        <span>
+          <strong>Test Medium Gap Hospital</strong>
+          <small>medium / hcahps_discharge_gap</small>
+        </span>
+        <b>65.0</b>
+      </button>
+    
+
+      <button class="account-row" data-target="hospital-330104">
+        <span>
+          <strong>Test Null Data Hospital</strong>
+          <small>medium / state_strength_vs_hospital_lag</small>
+        </span>
+        <b>data unavailable</b>
+      </button>
+    
+      </nav>
+      <section class="cards">
+        
+    <article id="hospital-330101" class="hospital-card high active">
+      <div class="card-head">
+        <div>
+          <div class="eyebrow">NY / 330101</div>
+          <h3>Test High Gap Hospital</h3>
+        </div>
+        <div class="score-block">
+          <span class="score">100.0</span>
+          <span class="score-label">gap score</span>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <span class="badge">high</span>
+        <span class="badge flag">🔴 Act this week</span>
+        <span class="badge confidence">high confidence</span>
+      </div>
+
+      <div class="metrics">
+        
+      <div class="metric">
+        <span class="metric-label">Lead angle</span>
+        <span class="metric-value">hcahps_care_transition_gap</span>
+      </div>
+    
+        
+      <div class="metric">
+        <span class="metric-label">Commitment</span>
+        <span class="metric-value">Earned the CMS Birthing-Friendly designation</span>
+      </div>
+    
+        
+      <div class="metric">
+        <span class="metric-label">Discharge info star</span>
+        <span class="metric-value">1</span>
+      </div>
+    
+        
+      <div class="metric">
+        <span class="metric-label">Overall star</span>
+        <span class="metric-value">1</span>
+      </div>
+    
+      </div>
+
+      
+      <section class="email-panel">
+        <div class="email-meta">
+          <div>
+            <div class="eyebrow">Email review workspace</div>
+            <h4>Birthing-Friendly commitment vs patient handoff experience</h4>
+            <div class="email-role">Recommended contact: VP of Women&#x27;s Services</div>
+          </div>
+          <span>openrouter_api</span>
+        </div>
+        <div class="variant-tabs" role="tablist" aria-label="Email variants">
+          
+          <button class="variant-tab active" data-variant="moral">
+            <span>Moral</span>
+            <small>Commitment gap</small>
+          </button>
+        
+
+          <button class="variant-tab" data-variant="clinical">
+            <span>Clinical</span>
+            <small>Patient-care signal</small>
+          </button>
+        
+
+          <button class="variant-tab" data-variant="financial">
+            <span>Financial</span>
+            <small>Reimbursement context</small>
+          </button>
+        
+        </div>
+        <div class="variant-stage">
+          
+        <article class="variant-content active" data-variant-panel="moral">
+          <div class="variant-label">Moral variant</div>
+          <p>Hi team, Test High Gap Hospital has earned the CMS Birthing-Friendly designation, but the current patient-experience signals suggest a handoff gap after discharge. ECHO flagged this account because the commitment is strong and the follow-through signal is lagging. Would it be useful to compare where postpartum handoffs are breaking down?</p>
+        </article>
+        
+
+        <article class="variant-content" data-variant-panel="clinical">
+          <div class="variant-label">Clinical variant</div>
+          <p>Hi team, ECHO flagged Test High Gap Hospital because its HCAHPS discharge/overall experience signal is below where a Birthing-Friendly hospital should be. This is not a clinical judgment; it is a handoff workflow signal that may point to missed postpartum follow-up opportunities.</p>
+        </article>
+        
+
+        <article class="variant-content" data-variant-panel="financial">
+          <div class="variant-label">Financial variant</div>
+          <p>Hi team, with 12-month postpartum Medicaid coverage active in New York, structured postpartum follow-up can be both a care-quality priority and a reimbursable workflow opportunity. ECHO found a mismatch worth reviewing before the next outreach cycle.</p>
+        </article>
+        
+        </div>
+        <div class="copy-note">Review one variant, adapt it if needed, then copy it into your sending tool. ECHO does not send.</div>
+      </section>
+    
+    </article>
+    
+
+    <article id="hospital-330102" class="hospital-card medium">
+      <div class="card-head">
+        <div>
+          <div class="eyebrow">NY / 330102</div>
+          <h3>Test Medium Gap Hospital</h3>
+        </div>
+        <div class="score-block">
+          <span class="score">65.0</span>
+          <span class="score-label">gap score</span>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <span class="badge">medium</span>
+        <span class="badge flag">🟡 Monitor</span>
+        <span class="badge confidence">high confidence</span>
+      </div>
+
+      <div class="metrics">
+        
+      <div class="metric">
+        <span class="metric-label">Lead angle</span>
+        <span class="metric-value">hcahps_discharge_gap</span>
+      </div>
+    
+        
+      <div class="metric">
+        <span class="metric-label">Commitment</span>
+        <span class="metric-value">Earned the CMS Birthing-Friendly designation</span>
+      </div>
+    
+        
+      <div class="metric">
+        <span class="metric-label">Discharge info star</span>
+        <span class="metric-value">2</span>
+      </div>
+    
+        
+      <div class="metric">
+        <span class="metric-label">Overall star</span>
+        <span class="metric-value">3</span>
+      </div>
+    
+      </div>
+
+      
+      <section class="email-panel">
+        <div class="email-meta">
+          <div>
+            <div class="eyebrow">Email review workspace</div>
+            <h4>Birthing-Friendly commitment vs patient handoff experience</h4>
+            <div class="email-role">Recommended contact: VP of Women&#x27;s Services</div>
+          </div>
+          <span>openrouter_api</span>
+        </div>
+        <div class="variant-tabs" role="tablist" aria-label="Email variants">
+          
+          <button class="variant-tab active" data-variant="moral">
+            <span>Moral</span>
+            <small>Commitment gap</small>
+          </button>
+        
+
+          <button class="variant-tab" data-variant="clinical">
+            <span>Clinical</span>
+            <small>Patient-care signal</small>
+          </button>
+        
+
+          <button class="variant-tab" data-variant="financial">
+            <span>Financial</span>
+            <small>Reimbursement context</small>
+          </button>
+        
+        </div>
+        <div class="variant-stage">
+          
+        <article class="variant-content active" data-variant-panel="moral">
+          <div class="variant-label">Moral variant</div>
+          <p>Hi team, Test Medium Gap Hospital has earned the CMS Birthing-Friendly designation, but the current patient-experience signals suggest a handoff gap after discharge. ECHO flagged this account because the commitment is strong and the follow-through signal is lagging. Would it be useful to compare where postpartum handoffs are breaking down?</p>
+        </article>
+        
+
+        <article class="variant-content" data-variant-panel="clinical">
+          <div class="variant-label">Clinical variant</div>
+          <p>Hi team, ECHO flagged Test Medium Gap Hospital because its HCAHPS discharge/overall experience signal is below where a Birthing-Friendly hospital should be. This is not a clinical judgment; it is a handoff workflow signal that may point to missed postpartum follow-up opportunities.</p>
+        </article>
+        
+
+        <article class="variant-content" data-variant-panel="financial">
+          <div class="variant-label">Financial variant</div>
+          <p>Hi team, with 12-month postpartum Medicaid coverage active in New York, structured postpartum follow-up can be both a care-quality priority and a reimbursable workflow opportunity. ECHO found a mismatch worth reviewing before the next outreach cycle.</p>
+        </article>
+        
+        </div>
+        <div class="copy-note">Review one variant, adapt it if needed, then copy it into your sending tool. ECHO does not send.</div>
+      </section>
+    
+    </article>
+    
+
+    <article id="hospital-330104" class="hospital-card medium">
+      <div class="card-head">
+        <div>
+          <div class="eyebrow">NY / 330104</div>
+          <h3>Test Null Data Hospital</h3>
+        </div>
+        <div class="score-block">
+          <span class="score">data unavailable</span>
+          <span class="score-label">gap score</span>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <span class="badge">medium</span>
+        <span class="badge flag">🟡 Monitor</span>
+        <span class="badge confidence">low confidence</span>
+      </div>
+
+      <div class="metrics">
+        
+      <div class="metric">
+        <span class="metric-label">Lead angle</span>
+        <span class="metric-value">state_strength_vs_hospital_lag</span>
+      </div>
+    
+        
+      <div class="metric">
+        <span class="metric-label">Commitment</span>
+        <span class="metric-value">Earned the CMS Birthing-Friendly designation</span>
+      </div>
+    
+        
+      <div class="metric">
+        <span class="metric-label">Discharge info star</span>
+        <span class="metric-value">data unavailable</span>
+      </div>
+    
+        
+      <div class="metric">
+        <span class="metric-label">Overall star</span>
+        <span class="metric-value">data unavailable</span>
+      </div>
+    
+      </div>
+
+      
+        <section class="email-panel empty">
+          <h4>Email generation</h4>
+          <p>No email object exists for this hospital. Low-confidence hospitals
+          are kept visible for review but skipped by Tool 5.</p>
+        </section>
+        
+    </article>
+    
+      </section>
+    </section>
+  </main>
+  <script>
+    function selectHospital(targetId) {
+      document.querySelectorAll(".account-row").forEach(function(row) {
+        row.classList.toggle("active", row.dataset.target === targetId);
+      });
+      document.querySelectorAll(".hospital-card").forEach(function(card) {
+        card.classList.toggle("active", card.id === targetId);
+      });
+    }
+
+    function selectVariant(card, variantName) {
+      card.querySelectorAll(".variant-tab").forEach(function(tab) {
+        tab.classList.toggle("active", tab.dataset.variant === variantName);
+      });
+      card.querySelectorAll(".variant-content").forEach(function(panel) {
+        panel.classList.toggle("active", panel.dataset.variantPanel === variantName);
+      });
+    }
+
+    document.querySelectorAll(".account-row").forEach(function(row) {
+      row.addEventListener("click", function() {
+        selectHospital(row.dataset.target);
+      });
+    });
+
+    document.querySelectorAll(".variant-tab").forEach(function(tab) {
+      tab.addEventListener("click", function() {
+        selectVariant(tab.closest(".hospital-card"), tab.dataset.variant);
+      });
+    });
+  </script>
+</body>
+</html>
