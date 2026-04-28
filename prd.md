@@ -83,7 +83,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 
 ### Out of Scope (for v1)
 - **Sending email.** ECHO never sends email. The GTM Engineer copies a draft and sends from their own tool.
-- **Reliable API uptime.** v1 depends on the OpenRouter API for email generation. If API is down or slow during demo, fallback is cached static templates pre-generated the night before. v2 may swap to Anthropic API.
+- **Reliable API uptime.** v1 depends on the OpenRouter API for email generation. If API is down or slow during demo, fallback is cached static templates pre-generated the night before.
 - **Hospital-level outcome data beyond HCAHPS.** v1 uses three HCAHPS signals per hospital: discharge information composite star (H_COMP_6), summary star rating (H_STAR_RATING), and discharge help YES percent (H_DISCH_HELP_Y_P). Other hospital-level metrics (severe maternal morbidity per hospital, AIM Data Center metrics, hospital-level readmissions) are v2.
 - **Multiple commitment sources.** v1 uses CMS Birthing-Friendly designation only, and every v1 hospital shares one default commitment tag. v2 adds curated per-hospital tags from AIM bundle participation, NNPQC PQC membership, Joint Commission Perinatal Care certification, and hospital newsroom press releases.
 - **Hospital-level Medicaid mix.** v1's financial email variant uses state-level Medicaid context (NY's 12-month postpartum coverage from KFF) instead of hospital-level Medicaid payer mix. Hospital-level Medicaid mix is v2.
@@ -113,8 +113,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 
 > **Adult Core Set source URL:** https://www.medicaid.gov/medicaid/quality-of-care/core-set-data-dashboard/welcome
 > **Hospital HCAHPS source URL:** https://data.cms.gov/provider-data/dataset/dgck-syfz
-> **OpenRouter API docs:** https://openrouter.ai/docs (v1)
-> **Anthropic API docs:** https://docs.anthropic.com/ (potential v2)
+> **OpenRouter API docs:** https://openrouter.ai/docs
 
 **v2 expansion sources (not in v1):**
 - State-level all-cause readmissions (CMS Medicaid Adult Core Set, PCR-AD)
@@ -160,7 +159,7 @@ The state aggregate becomes the *expectation* hospitals should be meeting. Hospi
 
 **Operations / Engineering:**
 - All v1 outcome and commitment data sources are free public CSVs and APIs. No HIPAA-sensitive data. No PII.
-- v1 uses OpenRouter free tier; v2 may swap to Anthropic API (paid).
+- v1 uses OpenRouter free tier.
 - Daily refresh runs against static or slowly-changing federal data. No real-time pipeline required for v1.
 - API outage = email generation breaks. Cached static fallback required for Demo Day reliability.
 - If CMS or CDC sources change URLs or formats (real risk given proposed FY27 HHS reorganization), the data layer is the only piece that needs updating.
