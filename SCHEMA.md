@@ -120,22 +120,55 @@ Updates gap_score to FINAL value and adds urgency fields:
 ```
 
 ### After Tool 5 — Outbound Generator (Paula)
-One email object per hospital, separate from the hospital dict:
+One email object per hospital, separate from the hospital dict.
+Each object has **three body variants** — the GTM engineer picks one from the dashboard.
+Nothing is sent automatically.
 
 ```python
 {
   "facility_id":        str,   # Matches hospital dict — used to link email to account
-  "subject":            str,   # Email subject line
-  "to_role":            str,   # Recommended contact role e.g. "VP of Women's Services"
+  "subject":            str,   # Email subject line (same for all 3 variants)
+  "to_role":            str,   # Recommended contact role
                                # EXACTLY one of:
                                # "CMO" / "VP of Women's Services" /
                                # "Chief Nursing Officer" / "VP of Quality"
-  "body":               str,   # Full email body — quotes commitment_tag and
-                               # names specific lagging metric with number
-  "lead_angle_used":    str,   # Which lead_angle from hospital dict drove the email
+
+  # ── Three email body variants ─────────────────────────────────────────────
+  # GTM engineer reads all three on the dashboard and picks the one that fits.
+  # All three quote commitment_tag and name a specific lagging metric with a number.
+
+  "body_moral":         str,   # Variant A — leads with commitment vs. outcome gap
+                               # Opening: "You made a commitment. The data shows a gap."
+                               # Hook: quotes commitment_tag, then names the outcome delta
+
+  "body_clinical":      str,   # Variant B — leads with patient care failure
+                               # Opening: "Women aren't getting postpartum follow-up;
+                               #   outcomes reflect it."
+                               # Hook: postpartum visit rate vs. state avg with numbers
+
+  "body_financial":     str,   # Variant C — leads with missed reimbursement
+                               # Opening: "49 states reimburse 12-month postpartum
+                               #   Medicaid. Your payer mix has unused reimbursement."
+                               # Hook: medicaid_pct + state medicaid_extended status
+
+  # ── Metadata ──────────────────────────────────────────────────────────────
+  "lead_angle_used":    str,   # Which lead_angle from hospital dict drove subject line
+                               # and determines which variant is pre-selected on load
   "urgency_tier":       str,   # Copied from hospital dict — "high"/"medium"/"low"
 }
 ```
+
+**Lead angle → default variant mapping** (pre-selects on dashboard load):
+
+| lead_angle | Default variant |
+|------------|----------------|
+| `baby_vs_mother_contrast` | `body_moral` |
+| `severe_morbidity_rate` | `body_clinical` |
+| `postpartum_visit_gap` | `body_clinical` |
+| `care_transition_gap` | `body_clinical` |
+| `readmission_penalty` | `body_financial` |
+
+The GTM engineer can always switch variants manually before copying.
 
 
 ## ⚠️ Critical Handoff Note — gap_score

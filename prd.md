@@ -69,13 +69,14 @@
 **Step 3: Acting on the daily 10**
 - [P0] User can suppress an account from today's list with optional reason
 - [P0] User can move accounts up or down in priority
+- [P0] User can view 3 pre-drafted email variants per account (moral / clinical / financial) and copy the one that fits
 - [P1] User can add an account to a watchlist for tomorrow
 - [P2] User can hand off to an external CRM via "Open in [CRM]" button
 
 > **Briefing card field list:** specified by the existing mockup HTML. Mockup will be updated to match v1 scope (NY-only, Birthing-Friendly only, state-level metrics, mismatch lead only). No additional design pass needed.
 
 ### Out of Scope (for v1)
-- **Outreach drafting.** ECHO does not write the email. The GTM Engineer drafts the outreach in their own tool. v2 may add Anthropic API-generated draft openers.
+- **Sending email.** ECHO never sends email. The GTM Engineer copies a draft and sends from their own tool.
 - **Hospital-level outcome data.** v1 uses state-level aggregates as proxies for postpartum outcomes. v2 may integrate AIM Data Center for hospital-level granularity.
 - **Multiple commitment sources.** v1 uses CMS Birthing-Friendly designation only. v2 may add AIM bundle participation, NNPQC PQC membership, Joint Commission Perinatal Care certification, and hospital newsroom press releases.
 - **Multiple outreach angles.** v1 leads with commitment-outcome mismatch only. v2 may add cost-of-poor-outcomes, peer benchmarking, and regulatory pressure angles. The architecture supports angle-swapping by reweighting Luba's scoring formula.
