@@ -59,9 +59,11 @@ def display_checkpoint(
     ])
 
     if not included:
-        return header + "\n\n  No high or medium urgency accounts today.\n"
+        summary = header + "\n\n  No high or medium urgency accounts today.\n"
+    else:
+        blocks = [_hospital_block(h, email_by_id[h["facility_id"]]) for h in included]
+        footer = DIVIDER + "\n  Review complete. Copy the variant that fits. ECHO does not send.\n"
+        summary = "\n".join([header] + blocks + [footer])
 
-    blocks = [_hospital_block(h, email_by_id[h["facility_id"]]) for h in included]
-    footer = DIVIDER + "\n  Review complete. Copy the variant that fits. ECHO does not send.\n"
-
-    return "\n".join([header] + blocks + [footer])
+    print(summary)
+    return summary
