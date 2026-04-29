@@ -11,6 +11,7 @@ v1 has HCAHPS data for NY only; non-NY states return an empty list.
 
 import csv
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -138,7 +139,7 @@ def _build_hospital_dict(
     """Assemble the Tool 1 hospital dict per SCHEMA.md."""
     return {
         "facility_id": hcahps_match["ccn"],
-        "facility_name": bf_row["name"],
+        "facility_name": re.sub(r"\s+", " ", bf_row["name"].replace("\\", "")).strip(),
         "state": bf_row["state"].upper(),
         "city": bf_row["city"],
         "county": hcahps_match["county"],
