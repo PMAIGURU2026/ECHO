@@ -35,6 +35,9 @@ This version reflects the actual data we have on hand. v0.1 was written before w
 **Impact on email variants**
 - The `body_financial` variant in v0.1 quoted `medicaid_pct` (hospital-level Medicaid mix). That field is gone. Paula's financial variant should now lead with state-level Medicaid context: NY has 12-month postpartum Medicaid coverage implemented since June 2023 (KFF tracker). This preserves three-variant structure without quoting a number we can't verify.
 
+**Data file scope**
+- HCAHPS-Hospital file is NY-filtered for v1 (`HCAHPS-Hospital-NY.csv`, 161 facilities, 3.3 MB) to keep the repo committable. Full national file (~102 MB) is regenerated via `scripts/filter_hcahps_to_ny.py` when refreshing data.
+
 ---
 
 ## Pipeline Order
@@ -54,7 +57,7 @@ One dict per hospital travels through the entire pipeline. Each tool adds fields
 {
   # ── IDENTITY ──────────────────────────────────────────────────────
   "facility_id":        str,    # CMS CCN e.g. "330024"
-                                # PRIMARY KEY — joins to HCAHPS-Hospital.csv
+                                # PRIMARY KEY — joins to HCAHPS-Hospital-NY.csv
                                 # Sourced from HCAHPS-Hospital join, not from
                                 # Birthing-Friendly registry (which has no CCN)
   "facility_name":      str,    # Full name e.g. "Mount Sinai Hospital"
@@ -356,8 +359,8 @@ These get reintroduced when their data sources are wired up:
 
 | File | Owner | Depends on |
 |------|-------|-----------|
-| `commitment_ingester.py` | Jonel | `Birthing_Friendly_Hospitals_Geocoded.csv` + `HCAHPS-Hospital.csv` (for CCN crosswalk) |
-| `outcome_scorer.py` | Jonel | `HCAHPS-Hospital.csv` + state constants module |
+| `commitment_ingester.py` | Jonel | `Birthing_Friendly_Hospitals_Geocoded.csv` + `HCAHPS-Hospital-NY.csv` (for CCN crosswalk) |
+| `outcome_scorer.py` | Jonel | `HCAHPS-Hospital-NY.csv` + state constants module |
 | `gap_calculator.py` | Luba | Output of `outcome_scorer.py` |
 | `urgency_ranker.py` | Luba | Output of `gap_calculator.py` + KFF + NCHS constants |
 | `outbound_generator.py` | Paula | Output of `urgency_ranker.py` + OpenRouter |
@@ -372,7 +375,7 @@ Every field above traces to a real file:
 | File | Provides |
 |------|----------|
 | `Birthing_Friendly_Hospitals_Geocoded.csv` | facility_name, state, city, address, zip, lat, lon, birthing_friendly |
-| `HCAHPS-Hospital.csv` | facility_id (CCN), county, discharge_info_star, discharge_help_pct, overall_star, hcahps_start_date, hcahps_end_date |
+| `HCAHPS-Hospital-NY.csv` | facility_id (CCN), county, discharge_info_star, discharge_help_pct, overall_star, hcahps_start_date, hcahps_end_date |
 | `core-set-data-dashboard...postpartum-care...csv` | state_postpartum_visit_rate (82.4 for NY 2023), state_postpartum_visit_year |
 | `raw_data.csv` (KFF) | medicaid_extended (True for NY) |
 | `hestat113.pdf` | racial_disparity_flag (computed from Black vs White MMR ratio) |

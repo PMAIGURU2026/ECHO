@@ -12,12 +12,9 @@ __pycache__/
 htmlcov/
 dist/
 build/
-*.egg-info/
 
-# data files (download fresh from CMS/CDC/KFF — don't commit large CSVs)
-data/*.csv
-data/*.json
-data/*.xlsx
+# data — ignore anything >10MB
+data/*.zip
 
 # logs
 *.log
@@ -29,3 +26,4 @@ data/*.xlsx
 # mac
 .DS_Store
 .claude/
+claude.local.md

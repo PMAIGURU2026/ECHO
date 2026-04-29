@@ -29,6 +29,7 @@ v1 is intentionally narrow:
 - State-level postpartum visit benchmark.
 - OpenRouter email generation with cached fallback.
 - Terminal human checkpoint.
+- Static HTML dashboard for human review.
 
 Hospital-level severe morbidity, readmissions, maternal quality scores, Medicaid payer mix, silent-gap mode, CRM integration, per-hospital curated commitment tags, and Anthropic are v2.
 
@@ -41,6 +42,7 @@ commitment_ingester
   -> urgency_ranker
   -> outbound_generator
   -> human_checkpoint
+  -> dashboard_generator
 ```
 
 One hospital dict travels through the full pipeline. Each tool only adds fields.
@@ -64,18 +66,27 @@ Removed v0.1 fields such as `compared_to_national`, `postpartum_visit_pct`, `sev
 | Source file | v1 use |
 |---|---|
 | `Birthing_Friendly_Hospitals_Geocoded.csv` | Birthing-Friendly universe, address, ZIP, lat/lon |
-| `HCAHPS-Hospital.csv` | CCN, county, discharge information star, discharge help percent, overall star, survey dates |
+| `HCAHPS-Hospital-NY.csv` | CCN, county, discharge information star, discharge help percent, overall star, survey dates |
 | `core-set-data-dashboard...postpartum-care...csv` | State postpartum visit rate and reporting year |
 | `raw_data.csv` | KFF Medicaid extension context |
 | `hestat113.pdf` | Racial disparity context |
 | OpenRouter API | Three grounded outreach variants |
+
+## Dashboard
+
+v1 includes a static HTML dashboard generated from hospital dicts and email objects. It is a visual review surface, not a web app:
+
+- No server, auth, CRM integration, or email sending.
+- Generated output: `dashboard/echo_dashboard.html`.
+- Mockup reference: `docs/mockups/echo-dashboard-mockup.html`.
+- The GTM Engineer reviews email variants, then copies/sends from their own tool.
 
 ## Team Ownership
 
 | Owner | Files |
 |---|---|
 | Jonel | `src/commitment_ingester.py`, `src/outcome_scorer.py` |
-| Luba | `tests/fixtures.py`, `src/gap_calculator.py`, `src/urgency_ranker.py` |
+| Luba | `tests/fixtures.py`, `src/gap_calculator.py`, `src/urgency_ranker.py`, `src/dashboard_generator.py` |
 | Paula | `src/outbound_generator.py`, `src/human_checkpoint.py` |
 | Team | `src/agent.py`, `tests/test_pipeline.py` |
 
