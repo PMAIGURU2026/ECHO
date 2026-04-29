@@ -3,6 +3,7 @@ import copy
 import sys
 import os
 import pytest
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -17,7 +18,7 @@ BODY_KEYS = ["body_moral", "body_clinical", "body_financial"]
 REQUIRED_FIELDS = [
     "facility_id", "subject", "to_role",
     "body_moral", "body_clinical", "body_financial",
-    "lead_angle_used", "urgency_tier",
+    "lead_angle_used", "urgency_tier", "generation_method",
 ]
 
 
@@ -39,6 +40,13 @@ def test_high_and_medium_included():
 
 def test_empty_list_returns_empty():
     assert generate_outbound_email([]) == []
+
+
+def test_low_data_confidence_skipped():
+    h = _run(NULL_DATA)
+    assert h.get("data_confidence") == "low"
+    emails = generate_outbound_email([h])
+    assert len(emails) == 0
 
 
 # ── output shape ───────────────────────────────────────────────────────────────
@@ -63,6 +71,39 @@ def test_lead_angle_used_matches_pipeline():
     h = _run(HIGH_GAP)
     email = generate_outbound_email([h])[0]
     assert email["lead_angle_used"] == h["lead_angle"]
+
+
+# ── generation_method ──────────────────────────────────────────────────────────
+
+def test_generation_method_is_valid():
+    email = generate_outbound_email([_run(HIGH_GAP)])[0]
+    assert email["generation_method"] in ("openrouter_api", "cached_fallback")
+
+
+def test_generation_method_openrouter_on_success():
+    h = _run(HIGH_GAP)
+    mock_bodies = ("moral body [COMPANY_NAME]", "clinical body [COMPANY_NAME]", "financial body [COMPANY_NAME]")
+    with patch("src.outbound_generator._OPENROUTER_KEY", "fake-key"), \
+         patch("src.outbound_generator._REQUESTS_AVAILABLE", True), \
+         patch("src.outbound_generator._call_openrouter", return_value=mock_bodies):
+        email = generate_outbound_email([h])[0]
+    assert email["generation_method"] == "openrouter_api"
+
+
+def test_generation_method_cached_fallback_on_api_failure():
+    h = _run(HIGH_GAP)
+    with patch("src.outbound_generator._OPENROUTER_KEY", "fake-key"), \
+         patch("src.outbound_generator._REQUESTS_AVAILABLE", True), \
+         patch("src.outbound_generator._call_openrouter", side_effect=Exception("API error")):
+        email = generate_outbound_email([h])[0]
+    assert email["generation_method"] == "cached_fallback"
+
+
+def test_generation_method_cached_fallback_no_commitment_tag():
+    h = _run(HIGH_GAP)
+    h["commitment_tag"] = None
+    email = generate_outbound_email([h])[0]
+    assert email["generation_method"] == "cached_fallback"
 
 
 # ── body_moral ─────────────────────────────────────────────────────────────────
@@ -143,8 +184,7 @@ def test_company_name_placeholder_present():
 # ── null data ──────────────────────────────────────────────────────────────────
 
 def test_null_data_does_not_crash():
-    # NULL_DATA has no HCAHPS stars — should still produce an email if tier qualifies
+    # NULL_DATA has data_confidence="low" — skipped entirely
     h = _run(NULL_DATA)
     emails = generate_outbound_email([h])
-    # just confirm it runs without error — tier determines inclusion
     assert isinstance(emails, list)
