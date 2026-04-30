@@ -208,11 +208,11 @@ One email object per hospital, separate from the hospital dict. Each has **three
                                # Hook: discharge_info_star or postpartum visit
                                # gap with state benchmark numbers
 
-  "body_financial":     str,   # Variant C — leads with reimbursement opportunity
+  "body_financial":     str,   # Variant C — leads with state coverage context
                                # Hook: NY's 12-month postpartum Medicaid
-                               # coverage (KFF) means structured postpartum
-                               # follow-up is reimbursable. Does NOT quote
-                               # hospital-level Medicaid mix (we don't have it).
+                               # coverage (KFF) creates a longer follow-up
+                               # window. Does NOT quote hospital-level Medicaid
+                               # mix or imply reimbursement risk/revenue.
 
   # ── Metadata ──────────────────────────────────────────────────────────
   "lead_angle_used":    str,   # Which lead_angle from hospital dict drove

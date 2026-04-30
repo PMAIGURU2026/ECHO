@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from tests.fixtures import HIGH_GAP, LOW_GAP, MEDIUM_GAP, NO_COMMITMENT, NULL_DATA
 
+from account_selector import select_top_accounts
 from dashboard_generator import generate_dashboard
 from gap_calculator import calculate_gap_score
 from human_checkpoint import display_checkpoint
@@ -72,7 +73,8 @@ def test_tool_4_gap_score_within_final_range(fresh_hospitals):
 
 def test_emails_only_for_high_or_medium_high_confidence(fresh_hospitals):
     after_4 = _run_through_tool_4(fresh_hospitals)
-    emails = generate_outbound_email(after_4)
+    selected = select_top_accounts(after_4)
+    emails = generate_outbound_email(selected)
 
     email_ids = {e["facility_id"] for e in emails}
 
@@ -80,6 +82,7 @@ def test_emails_only_for_high_or_medium_high_confidence(fresh_hospitals):
         eligible = (
             h["urgency_tier"] in ("high", "medium")
             and h["data_confidence"] == "high"
+            and h in selected
         )
         if eligible:
             assert h["facility_id"] in email_ids, (
@@ -99,17 +102,43 @@ def test_null_data_retained_through_tool_4_then_skipped_by_tool_5(fresh_hospital
     assert len(null_after_4) == 1, "NULL_DATA hospital was dropped before Tool 5"
     assert null_after_4[0]["data_confidence"] == "low"
 
-    emails = generate_outbound_email(after_4)
+    selected = select_top_accounts(after_4)
+    emails = generate_outbound_email(selected)
     assert all(e["facility_id"] != null_id for e in emails), (
         "NULL_DATA hospital received an email despite low data_confidence"
     )
 
 
+def test_top_account_selection_caps_tool_5_input_to_10():
+    hospitals = []
+    for index in range(15):
+        hospital = copy.deepcopy(HIGH_GAP)
+        hospital["facility_id"] = f"top-{index:02d}"
+        hospital["facility_name"] = f"Top Hospital {index:02d}"
+        hospital["overall_star"] = 1
+        hospital["discharge_info_star"] = 1
+        hospital["gap_score"] = 100.0 - index
+        hospital["urgency_tier"] = "high"
+        hospital["data_confidence"] = "high"
+        hospital["lead_angle"] = "hcahps_care_transition_gap"
+        hospitals.append(hospital)
+
+    selected = select_top_accounts(hospitals)
+    emails = generate_outbound_email(selected)
+
+    assert len(selected) == 10
+    assert len(emails) == 10
+    assert [email["facility_id"] for email in emails] == [
+        hospital["facility_id"] for hospital in selected
+    ]
+
+
 def test_human_checkpoint_returns_summary_string(fresh_hospitals):
     after_4 = _run_through_tool_4(fresh_hospitals)
-    emails = generate_outbound_email(after_4)
+    selected = select_top_accounts(after_4)
+    emails = generate_outbound_email(selected)
 
-    summary = display_checkpoint(after_4, emails)
+    summary = display_checkpoint(selected, emails)
 
     assert isinstance(summary, str)
     assert len(summary) > 0
@@ -117,10 +146,11 @@ def test_human_checkpoint_returns_summary_string(fresh_hospitals):
 
 def test_full_pipeline_generates_dashboard_html(fresh_hospitals, tmp_path):
     after_4 = _run_through_tool_4(fresh_hospitals)
-    emails = generate_outbound_email(after_4)
+    selected = select_top_accounts(after_4)
+    emails = generate_outbound_email(selected)
 
     output_path = tmp_path / "test_dashboard.html"
-    generate_dashboard(after_4, emails, str(output_path))
+    generate_dashboard(selected, emails, str(output_path))
 
     assert output_path.exists()
     assert output_path.stat().st_size > 0

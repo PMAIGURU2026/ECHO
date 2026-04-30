@@ -14,7 +14,7 @@ Before touching any file:
 ## Pipeline Order — Hard Constraint
 
 ```text
-commitment_ingester -> outcome_scorer -> gap_calculator -> urgency_ranker -> outbound_generator -> human_checkpoint
+commitment_ingester -> outcome_scorer -> gap_calculator -> urgency_ranker -> account_selector -> outbound_generator -> human_checkpoint -> dashboard_generator
 ```
 
 One hospital dict travels the full pipeline. Fields are only added. If a function removes or renames a field, it is wrong.
@@ -130,5 +130,5 @@ Never commit an implementation without a passing test. Never skip the failing-te
 
 ```text
 .venv/bin/python -m pytest tests/ -v       -> all green, 0 failures
-.venv/bin/python src/agent.py NY           -> real NY hospitals, 3 OpenRouter/cached email variants per high/medium high-confidence account, human checkpoint displayed, static dashboard generated
+.venv/bin/python src/agent.py NY           -> real NY hospitals, 3 OpenRouter/cached email variants per top 10 high-confidence accounts, human checkpoint displayed, static dashboard generated
 ```

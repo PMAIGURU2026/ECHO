@@ -9,7 +9,7 @@ This Birthing-Friendly hospital scores 1 star on HCAHPS discharge information.
 
 ## What It Does
 
-ECHO gives a GTM Engineer a prioritized account list and three outreach variants per high/medium, high-confidence account.
+ECHO gives a GTM Engineer today's top 10 high-confidence accounts and three outreach variants per account.
 
 The human stays in control:
 
@@ -40,6 +40,7 @@ commitment_ingester
   -> outcome_scorer
   -> gap_calculator
   -> urgency_ranker
+  -> account_selector
   -> outbound_generator
   -> human_checkpoint
   -> dashboard_generator
@@ -100,6 +101,24 @@ cp .env.example .env
 ```
 
 Add `OPENROUTER_API_KEY` to `.env` for live generation. Without it, the outbound generator should use cached fallback templates.
+
+Optional model settings:
+
+```bash
+OPENROUTER_MODEL=poolside/laguna-m.1:free
+OPENROUTER_FALLBACK_MODELS=
+OPENROUTER_USE_FALLBACK_MODELS=false
+OPENROUTER_TIMEOUT_SECONDS=5
+OPENROUTER_MAX_LIVE_EMAILS=10
+OPENROUTER_CONCURRENCY=1
+OPENROUTER_MAX_TOKENS=1200
+OPENROUTER_RETRIES=1
+OPENROUTER_JSON_MODE=false
+```
+
+For a quick live smoke test without spending calls on all 10 selected accounts, set `OPENROUTER_MAX_LIVE_EMAILS=1`.
+Set `OPENROUTER_USE_FALLBACK_MODELS=true` only when you have verified a backup model works for Tool 5.
+Increase `OPENROUTER_CONCURRENCY` only if OpenRouter is responding reliably; `1` is the safer free-tier demo default.
 
 ## Run
 

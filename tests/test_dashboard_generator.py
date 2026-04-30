@@ -107,7 +107,7 @@ def test_dashboard_displays_required_hospital_fields(tmp_path):
     assert "NY" in html
     assert "high" in html
     assert "Act this week" in html
-    assert "hcahps_care_transition_gap" in html
+    assert "Patient experience gap" in html
     assert "high confidence" in html
     assert "Earned the CMS Birthing-Friendly designation" in html
 

@@ -468,7 +468,8 @@ Test requirements:
 - Dict fields only grow after each tool.
 - Tool 3 `gap_score` is <= 75.
 - Tool 4 `gap_score` is <= 100.
-- Emails are created only for high/medium, high-confidence hospitals.
+- Account selector returns the top 10 high/medium, high-confidence hospitals by final score.
+- Emails are created only for selected top 10 accounts.
 - Null-data hospital is retained through Tool 4 and skipped by Tool 5.
 
 Run:
@@ -487,7 +488,7 @@ Acceptance criteria:
 
 - Runs the tools in the required order.
 - Accepts a state argument, with NY as the demo target.
-- Produces a ranked top list.
+- Produces a ranked top 10 account list.
 - Displays the human checkpoint.
 - Generates the static dashboard when dashboard dependencies are available.
 - Does not send email.
@@ -509,7 +510,7 @@ Expected final behavior:
 
 - All tests pass.
 - The NY run uses real NY hospitals.
-- High/medium, high-confidence accounts get three email variants.
+- Top 10 high/medium, high-confidence accounts get three email variants.
 - Email generation uses OpenRouter or cached fallback.
 - Human checkpoint is displayed.
 - Static dashboard is generated.

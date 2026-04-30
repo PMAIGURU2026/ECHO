@@ -20,6 +20,7 @@ from commitment_ingester import get_hospital_commitments
 from outcome_scorer import score_outcomes
 from gap_calculator import calculate_gap_score
 from urgency_ranker import add_urgency
+from account_selector import select_top_accounts
 from outbound_generator import generate_outbound_email
 from human_checkpoint import display_checkpoint
 from dashboard_generator import generate_dashboard
@@ -61,15 +62,18 @@ def run_pipeline(state: str) -> int:
         tier["low"],
     )
 
-    emails = generate_outbound_email(hospitals)
+    selected_hospitals = select_top_accounts(hospitals, limit=10)
+    log.info("Account selector — Selected top %d accounts", len(selected_hospitals))
+
+    emails = generate_outbound_email(selected_hospitals)
     methods = Counter(e["generation_method"] for e in emails)
     methods_summary = ", ".join(f"{k}={v}" for k, v in methods.items()) or "none"
     log.info("Tool 5 — Generated %d emails (%s)", len(emails), methods_summary)
 
-    display_checkpoint(hospitals, emails)
+    display_checkpoint(selected_hospitals, emails)
     log.info("Tool 6 — Checkpoint displayed")
 
-    output_path = generate_dashboard(hospitals, emails, DASHBOARD_PATH)
+    output_path = generate_dashboard(selected_hospitals, emails, DASHBOARD_PATH)
     log.info("Tool 7 — Dashboard written to %s", output_path)
 
     return 0

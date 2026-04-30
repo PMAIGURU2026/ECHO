@@ -69,6 +69,15 @@ def _metric(label: str, value: Any) -> str:
     """
 
 
+def _lead_angle_label(value: Any) -> str:
+    labels = {
+        "hcahps_care_transition_gap": "Patient experience gap",
+        "hcahps_discharge_gap": "Discharge support gap",
+        "state_strength_vs_hospital_lag": "State strength vs hospital lag",
+    }
+    return labels.get(str(value), value)
+
+
 def _email_variants(email: dict[str, Any] | None) -> str:
     if email is None:
         return """
@@ -171,7 +180,7 @@ def _hospital_card(hospital: dict[str, Any], email: dict[str, Any] | None, is_ac
       </div>
 
       <div class="metrics">
-        {_metric("Lead angle", hospital.get("lead_angle"))}
+        {_metric("Lead angle", _lead_angle_label(hospital.get("lead_angle")))}
         {_metric("Commitment", hospital.get("commitment_tag"))}
         {_metric("Discharge info star", hospital.get("discharge_info_star"))}
         {_metric("Overall star", hospital.get("overall_star"))}
@@ -371,7 +380,12 @@ def _render_html(hospitals: list[dict[str, Any]], emails: list[dict[str, Any]]) 
       gap: 10px;
       margin-bottom: 16px;
     }}
-    .metric {{ border: 1px solid var(--line); border-radius: 12px; padding: 10px; }}
+    .metric {{
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      min-width: 0;
+      padding: 10px;
+    }}
     .metric-label {{
       display: block;
       color: var(--muted);
@@ -379,7 +393,13 @@ def _render_html(hospitals: list[dict[str, Any]], emails: list[dict[str, Any]]) 
       font-size: 11px;
       text-transform: uppercase;
     }}
-    .metric-value {{ font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; }}
+    .metric-value {{
+      display: block;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }}
     .email-panel {{
       border-top: 1px solid var(--line);
       padding-top: 16px;
